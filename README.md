@@ -1,6 +1,6 @@
 # Evolutionary Theory of Behavioral Dynamics (ETBD)
 
-This repository contains implementations of Jack McDowell's Evolutionary Theory of Behavioral Dynamics, a computational model that applies evolutionary principles to explain operant behavior.
+This repository contains implementations of Jack McDowell's Evolutionary Theory of Behavioral Dynamics, a computational model that applies evolutionary principles to explain operant behavior. The primary code was developed by Joe Hacker.
 
 ## Setup
 
@@ -44,6 +44,13 @@ The main ETBD implementation is in `scripts_notebooks/etbd.py`. This script incl
 - **Mutation**: Random bit flipping with specified mutation rate
 - **Reinforcement Schedules**: Random interval schedules for operant conditioning
 
+## Experimentation Tools
+
+- **`experiment.py`**: Interactive tool for parameter exploration with user input
+- **`parameter_test.py`**: Automated testing of different parameter combinations
+- **`example_usage.py`**: Comprehensive example with analysis and plotting
+- **`quick_demo.py`**: Simple demo for quick testing
+
 ## Running Simulations
 
 To run the ETBD simulation:
@@ -65,6 +72,20 @@ To run a quick demo:
 ```bash
 cd scripts_notebooks
 python quick_demo.py
+```
+
+To run interactive experimentation:
+
+```bash
+cd scripts_notebooks
+python experiment.py
+```
+
+To run parameter comparison tests:
+
+```bash
+cd scripts_notebooks
+python parameter_test.py
 ```
 
 For interactive exploration, you can also use Jupyter notebooks:

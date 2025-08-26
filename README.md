@@ -38,16 +38,17 @@ The main ETBD implementation is in `scripts_notebooks/etbd.py`. This script incl
 
 ## Key Components
 
-- **Fitness Function**: Computes fitness based on distance from reinforced behavior
+- **Fitness Function**: Computes fitness based on distance from target range center
 - **Selection**: Parents selected inversely proportional to fitness
 - **Reproduction**: Crossover recombination of binary genotypes
 - **Mutation**: Random bit flipping with specified mutation rate
 - **Reinforcement Schedules**: Random interval schedules for operant conditioning
+- **Target Response Ranges**: Optional specification of response ranges that receive reinforcement
 
 ## Experimentation Tools
 
-- **`experiment.py`**: Interactive tool for parameter exploration with user input
-- **`parameter_test.py`**: Automated testing of different parameter combinations
+- **`experiment.py`**: Interactive tool for parameter exploration with user input and target range specification
+- **`parameter_test.py`**: Automated testing of different parameter combinations including target ranges
 - **`example_usage.py`**: Comprehensive example with analysis and plotting
 - **`quick_demo.py`**: Simple demo for quick testing
 

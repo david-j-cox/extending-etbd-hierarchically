@@ -42,6 +42,19 @@ def get_user_parameters():
     mean_interval = float(input("Mean interval for RI schedule (seconds, default: 30): ") or "30")
     scaling_factor = float(input("Scaling factor (default: 0.01): ") or "0.01")
     
+    # Target range parameters
+    print("\nTarget Range Settings:")
+    use_target_range = input("Use target response range? (y/n, default: n): ").strip().lower() or "n"
+    
+    if use_target_range in ['y', 'yes']:
+        target_min = int(input("Target range minimum (default: 200): ") or "200")
+        target_max = int(input("Target range maximum (default: 250): ") or "250")
+        target_range = (target_min, target_max)
+        print(f"Target range: {target_min}-{target_max}")
+    else:
+        target_range = None
+        print("No target range - all responses will be reinforced")
+    
     # Simulation parameters
     print("\nSimulation Settings:")
     time_step = float(input("Time step (seconds, default: 0.01): ") or "0.01")
@@ -56,7 +69,8 @@ def get_user_parameters():
         'mean_interval': mean_interval,
         'scaling_factor': scaling_factor,
         'time_step': time_step,
-        'total_simulation_duration': total_simulation_duration
+        'total_simulation_duration': total_simulation_duration,
+        'target_range': target_range
     }
 
 def run_simulation(params):
@@ -99,6 +113,15 @@ def analyze_results(logs, params):
     print(f"Total reinforcers: {df['reinforcer_count'].iloc[-1]}")
     print(f"Reinforcement rate: {len(df) / (params['total_simulation_duration']/params['mean_interval']):.2f} reinforcers per hour")
     
+    if params.get('target_range') is not None:
+        target_min, target_max = params['target_range']
+        print(f"Target range: {target_min}-{target_max}")
+        # Calculate percentage of responses in target range
+        in_target = df[df['reinforced'] == True]
+        if len(df) > 0:
+            target_percentage = (len(in_target) / len(df)) * 100
+            print(f"Responses in target range: {len(in_target)}/{len(df)} ({target_percentage:.1f}%)")
+    
     print(f"\nStatistics:")
     print(f"Mean phenotype: {df['phenotype'].mean():.2f}")
     print(f"Std phenotype: {df['phenotype'].std():.2f}")
@@ -117,10 +140,21 @@ def create_plots(df, params):
     
     # Create a comprehensive figure
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle(f'ETBD Simulation Results\nParameters: Pop={params["population_size"]}, μ={params["mutation_rate"]}, RI={params["mean_interval"]}s', fontsize=16)
     
-    # Plot 1: Phenotype evolution
+    # Create title with target range info
+    title = f'ETBD Simulation Results\nParameters: Pop={params["population_size"]}, μ={params["mutation_rate"]}, RI={params["mean_interval"]}s'
+    if params.get('target_range') is not None:
+        target_min, target_max = params['target_range']
+        title += f', Target: {target_min}-{target_max}'
+    
+    fig.suptitle(title, fontsize=16)
+    
+    # Plot 1: Phenotype evolution with target range
     axes[0, 0].plot(df['generation'], df['phenotype'], 'b-', alpha=0.7, linewidth=1)
+    if params.get('target_range') is not None:
+        target_min, target_max = params['target_range']
+        axes[0, 0].axhspan(target_min, target_max, alpha=0.3, color='green', label=f'Target Range ({target_min}-{target_max})')
+        axes[0, 0].legend()
     axes[0, 0].set_xlabel('Generation')
     axes[0, 0].set_ylabel('Phenotype Value')
     axes[0, 0].set_title('Phenotype Evolution')
@@ -140,22 +174,61 @@ def create_plots(df, params):
     axes[0, 2].set_title('Reinforcement Accumulation')
     axes[0, 2].grid(True, alpha=0.3)
     
-    # Plot 4: Phenotype distribution
-    axes[1, 0].hist(df['phenotype'], bins=20, alpha=0.7, color='purple', edgecolor='black')
+    # Plot 4: Phenotype distribution with target range
+    axes[1, 0].hist(df['phenotype'], bins=20, alpha=0.7, color='purple', edgecolor='black', label='All Responses')
+    if params.get('target_range') is not None:
+        target_min, target_max = params['target_range']
+        # Highlight reinforced responses
+        reinforced_responses = df[df['reinforced'] == True]['phenotype']
+        if len(reinforced_responses) > 0:
+            axes[1, 0].hist(reinforced_responses, bins=20, alpha=0.8, color='green', edgecolor='black', label='Reinforced Responses')
+        axes[1, 0].axvspan(target_min, target_max, alpha=0.2, color='green', label=f'Target Range ({target_min}-{target_max})')
+        axes[1, 0].legend()
     axes[1, 0].set_xlabel('Phenotype Value')
     axes[1, 0].set_ylabel('Frequency')
     axes[1, 0].set_title('Phenotype Distribution')
     axes[1, 0].grid(True, alpha=0.3)
     
-    # Plot 5: Fitness distribution
-    axes[1, 1].hist(df['fitness'], bins=20, alpha=0.7, color='orange', edgecolor='black')
-    axes[1, 1].set_xlabel('Fitness')
-    axes[1, 1].set_ylabel('Frequency')
-    axes[1, 1].set_title('Fitness Distribution')
-    axes[1, 1].grid(True, alpha=0.3)
+    # Plot 5: Response distribution over time (first vs last half)
+    if len(df) > 10:
+        mid_point = len(df) // 2
+        first_half = df[:mid_point]['phenotype']
+        second_half = df[mid_point:]['phenotype']
+        
+        axes[1, 1].hist(first_half, bins=15, alpha=0.6, color='blue', label='First Half', density=True)
+        axes[1, 1].hist(second_half, bins=15, alpha=0.6, color='red', label='Second Half', density=True)
+        if params.get('target_range') is not None:
+            target_min, target_max = params['target_range']
+            axes[1, 1].axvspan(target_min, target_max, alpha=0.2, color='green', label=f'Target Range ({target_min}-{target_max})')
+        axes[1, 1].legend()
+        axes[1, 1].set_xlabel('Phenotype Value')
+        axes[1, 1].set_ylabel('Density')
+        axes[1, 1].set_title('Response Distribution: First vs Second Half')
+        axes[1, 1].grid(True, alpha=0.3)
+    else:
+        # Fallback to fitness distribution if not enough data
+        axes[1, 1].hist(df['fitness'], bins=20, alpha=0.7, color='orange', edgecolor='black')
+        axes[1, 1].set_xlabel('Fitness')
+        axes[1, 1].set_ylabel('Frequency')
+        axes[1, 1].set_title('Fitness Distribution')
+        axes[1, 1].grid(True, alpha=0.3)
     
-    # Plot 6: Scatter plot of phenotype vs fitness
-    axes[1, 2].scatter(df['phenotype'], df['fitness'], alpha=0.6, s=20)
+    # Plot 6: Scatter plot of phenotype vs fitness with reinforcement status
+    if params.get('target_range') is not None:
+        # Color by reinforcement status
+        reinforced = df[df['reinforced'] == True]
+        not_reinforced = df[df['reinforced'] == False]
+        
+        if len(not_reinforced) > 0:
+            axes[1, 2].scatter(not_reinforced['phenotype'], not_reinforced['fitness'], 
+                             alpha=0.6, s=20, color='red', label='Not Reinforced')
+        if len(reinforced) > 0:
+            axes[1, 2].scatter(reinforced['phenotype'], reinforced['fitness'], 
+                             alpha=0.8, s=25, color='green', label='Reinforced')
+        axes[1, 2].legend()
+    else:
+        axes[1, 2].scatter(df['phenotype'], df['fitness'], alpha=0.6, s=20)
+    
     axes[1, 2].set_xlabel('Phenotype')
     axes[1, 2].set_ylabel('Fitness')
     axes[1, 2].set_title('Phenotype vs Fitness')
@@ -227,7 +300,8 @@ def main():
                 'mean_interval': 30,
                 'scaling_factor': 0.01,
                 'time_step': 0.01,
-                'total_simulation_duration': 300  # 5 minutes
+                'total_simulation_duration': 300,  # 5 minutes
+                'target_range': None
             }
             print(f"\nUsing default parameters (5-minute simulation)")
             
@@ -241,7 +315,8 @@ def main():
                 'mean_interval': 30,
                 'scaling_factor': 0.01,
                 'time_step': 0.01,
-                'total_simulation_duration': 120  # 2 minutes
+                'total_simulation_duration': 120,  # 2 minutes
+                'target_range': None
             }
             print(f"\nRunning quick demo (2-minute simulation)")
             
@@ -275,8 +350,12 @@ def main():
             print(f"    Data: {data_filename}")
         
         # Ask if user wants to continue
-        continue_choice = input(f"\nRun another experiment? (y/n): ").strip().lower()
-        if continue_choice not in ['y', 'yes']:
+        try:
+            continue_choice = input(f"\nRun another experiment? (y/n): ").strip().lower()
+            if continue_choice not in ['y', 'yes']:
+                print(f"\nThanks for experimenting with ETBD!")
+                break
+        except (EOFError, KeyboardInterrupt):
             print(f"\nThanks for experimenting with ETBD!")
             break
 

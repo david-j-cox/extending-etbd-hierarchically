@@ -15,7 +15,7 @@ import time
 
 def test_parameters(params, description=""):
     """Test a specific parameter combination"""
-    print(f"\n🧪 Testing: {description}")
+    print(f"\nTesting: {description}")
     print(f"Parameters: {params}")
     
     start_time = time.time()
@@ -23,12 +23,12 @@ def test_parameters(params, description=""):
     logs = run_etbd_simulation(**params)
     
     end_time = time.time()
-    print(f"✅ Completed in {end_time - start_time:.1f} seconds")
+    print(f"Completed in {end_time - start_time:.1f} seconds")
     
     df = pd.DataFrame(logs)
     
     if len(df) > 0:
-        print(f"📊 Results: {len(df)} events, mean phenotype: {df['phenotype'].mean():.1f}")
+        print(f"Results: {len(df)} events, mean phenotype: {df['phenotype'].mean():.1f}")
         
         # Create simple plot
         plt.figure(figsize=(12, 4))
@@ -68,12 +68,12 @@ def test_parameters(params, description=""):
         
         return df
     else:
-        print("❌ No reinforcement events occurred")
+        print("No reinforcement events occurred")
         return None
 
 def main():
     """Run parameter tests"""
-    print("🧬 ETBD Parameter Testing")
+    print("ETBD Parameter Testing")
     print("=" * 50)
     
     # Test 1: Default parameters
@@ -118,7 +118,7 @@ def main():
     
     test_parameters(strong_selection_params, "Strong Selection")
     
-    print(f"\n🎉 Parameter testing completed!")
+    print(f"\nParameter testing completed!")
     print(f"Check the figures/ and data/ directories for results.")
 
 if __name__ == "__main__":

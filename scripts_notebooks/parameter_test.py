@@ -85,7 +85,8 @@ def main():
         'mean_interval': 30,
         'scaling_factor': 0.01,
         'time_step': 0.01,
-        'total_simulation_duration': 300  # 5 minutes
+        'total_simulation_duration': 300,  # 5 minutes
+        'target_range': None
     }
     
     test_parameters(default_params, "Default Parameters")
@@ -117,6 +118,20 @@ def main():
     strong_selection_params['total_simulation_duration'] = 180  # 3 minutes
     
     test_parameters(strong_selection_params, "Strong Selection")
+    
+    # Test 6: Target range reinforcement
+    target_range_params = default_params.copy()
+    target_range_params['target_range'] = (200, 250)
+    target_range_params['total_simulation_duration'] = 180  # 3 minutes
+    
+    test_parameters(target_range_params, "Target Range 200-250")
+    
+    # Test 7: Different target range
+    target_range_params2 = default_params.copy()
+    target_range_params2['target_range'] = (400, 600)
+    target_range_params2['total_simulation_duration'] = 180  # 3 minutes
+    
+    test_parameters(target_range_params2, "Target Range 400-600")
     
     print(f"\nParameter testing completed!")
     print(f"Check the figures/ and data/ directories for results.")

@@ -82,12 +82,21 @@ logs = {
 
 cumulative_reinforcers = 0
 
-def log_event(gen, genotype, reinforced_behavior, reinforcer_obtained):
+def log_event(gen, genotype, emitted_behavior, reinforcer_obtained, target_range=None):
     global cumulative_reinforcers
 
     phenotype = decode_genotype(genotype)
     reinforced = reinforcer_obtained
-    fitness = abs(genotype - reinforced_behavior)  # can adjust as needed
+    
+    # Calculate fitness based on distance from target range
+    if target_range is not None:
+        target_min, target_max = target_range
+        target_center = (target_min + target_max) / 2
+        # Fitness is distance from target center
+        fitness = abs(emitted_behavior - target_center)
+    else:
+        # Fallback to original fitness calculation
+        fitness = abs(genotype - emitted_behavior)
 
     if reinforced:
         cumulative_reinforcers += 1
@@ -108,10 +117,22 @@ def run_etbd_simulation(
     mean_interval=30,
     scaling_factor=0.01,
     time_step=0.01,
-    total_simulation_duration=3600
+    total_simulation_duration=3600,
+    target_range=None
 ):
     """
     Run the ETBD simulation with specified parameters.
+    
+    Args:
+        population_size: Number of individuals in the population
+        mutation_rate: Probability of mutation per bit
+        fitness_density_mean: Parameter controlling selection pressure
+        phenotype_range: Maximum phenotype value (0 to phenotype_range)
+        mean_interval: Mean interval for RI schedule in seconds
+        scaling_factor: Scaling factor for phenotype to response rate mapping
+        time_step: Time step for simulation in seconds
+        total_simulation_duration: Total simulation duration in seconds
+        target_range: Tuple (min, max) defining the target response range for reinforcement
     
     Returns:
         dict: Simulation logs containing generation, genotype, phenotype, 
@@ -151,24 +172,36 @@ def run_etbd_simulation(
         if np.random.rand() < prob_response_per_step:
             # Response occurred
             if ri_schedule.check_reinforcement(simulation_time):
-                # Reinforcement delivered -> Selection & Reproduction
-                generation += 1
+                # Check if response is in target range for reinforcement
+                if target_range is not None:
+                    target_min, target_max = target_range
+                    reinforcer_obtained = target_min <= emitted_behavior <= target_max
+                else:
+                    # If no target range specified, always reinforce
+                    reinforcer_obtained = True
                 
-                # Select parents based on fitness
-                parent1, parent2 = select_parents(population, emitted_behavior, fitness_density_mean)
-                
-                # Reproduce
-                child = rep_rule(parent1, parent2)
-                
-                # Mutate
-                child = mutate(child, mutation_rate=mutation_rate)
-                
-                # Replace random member of population with offspring
-                replace_index = np.random.randint(0, population_size)
-                population[replace_index] = child
-                
-                # Log the event
-                log_event(generation, child, emitted_behavior, True)
+                if reinforcer_obtained:
+                    # Reinforcement delivered -> Selection & Reproduction
+                    generation += 1
+                    
+                    # Select parents based on fitness
+                    parent1, parent2 = select_parents(population, emitted_behavior, fitness_density_mean)
+                    
+                    # Reproduce
+                    child = rep_rule(parent1, parent2)
+                    
+                    # Mutate
+                    child = mutate(child, mutation_rate=mutation_rate)
+                    
+                    # Replace random member of population with offspring
+                    replace_index = np.random.randint(0, population_size)
+                    population[replace_index] = child
+                    
+                    # Log the event
+                    log_event(generation, child, emitted_behavior, True, target_range)
+                else:
+                    # Log non-reinforced response
+                    log_event(generation, emitted_behavior, emitted_behavior, False, target_range)
         
         # Advance time
         simulation_time += time_step

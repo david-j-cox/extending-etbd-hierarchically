@@ -1,6 +1,6 @@
 # Evolutionary Theory of Behavioral Dynamics (ETBD)
 
-This repository contains implementations of Jack McDowell's Evolutionary Theory of Behavioral Dynamics, a computational model that applies evolutionary principles to explain operant behavior.
+This repository contains implementations of Jack McDowell's Evolutionary Theory of Behavioral Dynamics, a computational model that applies evolutionary principles to explain operant behavior. The primary code was developed by Joe Hacker. 
 
 ## Setup
 
